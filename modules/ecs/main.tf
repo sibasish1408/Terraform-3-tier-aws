@@ -1,15 +1,3 @@
-resource "aws_lb_target_group" "main" {
-  name     = "${var.service_name}-target-group"
-  port     = var.container_port
-  protocol = "HTTP"
-  vpc_id   = var.vpc_id
-
-  health_check {
-    path     = "/"
-    protocol = "HTTP"
-  }
-}
-
 resource "aws_ecs_task_definition" "main" {
   family                   = var.task_family
   container_definitions    = jsonencode([{
@@ -24,7 +12,7 @@ resource "aws_ecs_task_definition" "main" {
         protocol      = "tcp"
       }
     ]
-    log_configuration {
+    log_configuration = {
       log_driver = "awslogs"
       options = {
         "awslogs-group"  = var.log_group_name
@@ -33,6 +21,10 @@ resource "aws_ecs_task_definition" "main" {
       }
     }
   }])
+  
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  execution_role_arn      = var.execution_role_arn
 }
 
 resource "aws_ecs_service" "main" {
@@ -42,18 +34,14 @@ resource "aws_ecs_service" "main" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = [var.vpc_id]
+    subnets          = module.private_subnet_ids
     assign_public_ip = "ENABLED"
+    security_groups  = module.ecs_security_group_id
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.main.arn
+    target_group_arn = module.target_group_arn
     container_name   = var.container_name
     container_port   = var.container_port
   }
-}
-
-resource "aws_lb_target_group_attachment" "ecs_service" {
-  target_group_arn = aws_lb_target_group.main.arn
-  target_id        = aws_ecs_service.main.id
 }

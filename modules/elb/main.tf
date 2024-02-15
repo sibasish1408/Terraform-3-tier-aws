@@ -2,21 +2,17 @@ resource "aws_lb" "main" {
   name               = var.elb_name
   internal           = false
   load_balancer_type = "application"
-  subnets            = [var.vpc_id]
-  security_groups    = [var.elb_security_group_id]
+  subnets            = [var.public_subnet_cidr_blocks]
+  security_groups    = [module.elb_security_group_id]
 
   enable_deletion_protection = false
-
-  tags = {
-    Name = var.elb_name
-  }
 }
 
 resource "aws_lb_target_group" "main" {
   name     = "${var.elb_name}-target-group"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  vpc_id   = module.vpc_id
 
   health_check {
     path = "/"

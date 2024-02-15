@@ -3,6 +3,16 @@ variable "service_name" {
   default     = "ecs-service"
 }
 
+variable "region" {
+  description = "Name of the ECS service"
+  default     = "ap-south-1"
+}
+
+variable "execution_role_arn" {
+  description = "Family name of the ECS task definition"
+  default     = "taskrole"
+}
+
 variable "task_family" {
   description = "Family name of the ECS task definition"
   default     = "ecs-task"
